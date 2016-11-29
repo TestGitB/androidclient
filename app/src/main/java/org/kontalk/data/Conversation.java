@@ -55,6 +55,7 @@ public class Conversation {
         Threads.ENCRYPTED,
         Threads.DRAFT,
         Threads.REQUEST_STATUS,
+        Threads.ENCRYPTION,
         Groups.GROUP_JID,
         Groups.SUBJECT,
         Groups.GROUP_TYPE,
@@ -72,10 +73,11 @@ public class Conversation {
     private static final int COLUMN_ENCRYPTED = 8;
     private static final int COLUMN_DRAFT = 9;
     private static final int COLUMN_REQUEST_STATUS = 10;
-    private static final int COLUMN_GROUP_JID = 11;
-    private static final int COLUMN_GROUP_SUBJECT = 12;
-    private static final int COLUMN_GROUP_TYPE = 13;
-    private static final int COLUMN_GROUP_MEMBERSHIP = 14;
+    private static final int COLUMN_ENCRYPTION = 11;
+    private static final int COLUMN_GROUP_JID = 12;
+    private static final int COLUMN_GROUP_SUBJECT = 13;
+    private static final int COLUMN_GROUP_TYPE = 14;
+    private static final int COLUMN_GROUP_MEMBERSHIP = 15;
 
     @SuppressWarnings("WeakerAccess")
     final Context mContext;
@@ -96,6 +98,8 @@ public class Conversation {
     private String mNumberHint;
     private boolean mEncrypted;
     private int mRequestStatus;
+    // set encryption disabled for this chat
+    private boolean mEncryption;
 
     // from groups table
     private String mGroupJid;
@@ -125,6 +129,7 @@ public class Conversation {
             mEncrypted = c.getInt(COLUMN_ENCRYPTED) != 0;
             mDraft = c.getString(COLUMN_DRAFT);
             mRequestStatus = c.getInt(COLUMN_REQUEST_STATUS);
+            mEncryption = c.getInt(COLUMN_ENCRYPTION) != 0;
 
             mGroupJid = c.getString(COLUMN_GROUP_JID);
             mGroupSubject = c.getString(COLUMN_GROUP_SUBJECT);
@@ -266,6 +271,10 @@ public class Conversation {
 
     public String getNumberHint() {
         return mNumberHint;
+    }
+
+    public boolean isEncryptionEnabled() {
+        return mEncryption;
     }
 
     /**
@@ -482,6 +491,11 @@ public class Conversation {
                 subject, currentMembers, encrypted,
                 ContentUris.parseId(cmdMsg), msgId);
         }
+    }
+
+    public void setEncryption(boolean encryption) {
+        mEncryption = encryption;
+        MessagesProviderUtils.setEncryption(mContext, mThreadId, encryption);
     }
 
     public void markAsRead() {

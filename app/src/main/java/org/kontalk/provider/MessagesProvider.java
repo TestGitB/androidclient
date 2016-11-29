@@ -103,7 +103,7 @@ public class MessagesProvider extends ContentProvider {
     private static HashMap<String, String> groupsProjectionMap;
 
     private static class DatabaseHelper extends SQLiteOpenHelper {
-        private static final int DATABASE_VERSION = 10;
+        private static final int DATABASE_VERSION = 11;
         private static final String DATABASE_NAME = "messages.db";
 
         private static final String _SCHEMA_MESSAGES = "(" +
@@ -169,7 +169,8 @@ public class MessagesProvider extends ContentProvider {
             "status INTEGER," +
             "encrypted INTEGER NOT NULL DEFAULT 0, " +
             "draft TEXT," +
-            "request_status INTEGER NOT NULL DEFAULT 0" +
+            "request_status INTEGER NOT NULL DEFAULT 0," +
+            "encryption INTEGER NOT NULL DEFAULT 1" +
             ")";
 
         /** This table will contain the latest message from each conversation. */
@@ -360,6 +361,9 @@ public class MessagesProvider extends ContentProvider {
             SCHEMA_MESSAGES_GROUPS,
         };
 
+        private static final String SCHEMA_UPGRADE_V10 =
+            "ALTER TABLE " + TABLE_THREADS + " ADD COLUMN encryption INTEGER NOT NULL DEFAULT 1";
+
         private Context mContext;
 
         protected DatabaseHelper(Context context) {
@@ -421,6 +425,10 @@ public class MessagesProvider extends ContentProvider {
                 for (String sql : SCHEMA_UPGRADE_V9) {
                     db.execSQL(sql);
                 }
+            }
+
+            if (oldVersion < 11) {
+                db.execSQL(SCHEMA_UPGRADE_V10);
             }
         }
     }
@@ -1685,6 +1693,7 @@ public class MessagesProvider extends ContentProvider {
         threadsProjectionMap.put(Threads.ENCRYPTED, Threads.ENCRYPTED);
         threadsProjectionMap.put(Threads.DRAFT, Threads.DRAFT);
         threadsProjectionMap.put(Threads.REQUEST_STATUS, Threads.REQUEST_STATUS);
+        threadsProjectionMap.put(Threads.ENCRYPTION, Threads.ENCRYPTION);
         threadsProjectionMap.put(Groups.GROUP_JID, Groups.GROUP_JID);
         threadsProjectionMap.put(Groups.SUBJECT, Groups.SUBJECT);
         threadsProjectionMap.put(Groups.GROUP_TYPE, Groups.GROUP_TYPE);

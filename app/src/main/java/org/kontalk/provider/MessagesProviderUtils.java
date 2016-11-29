@@ -349,4 +349,12 @@ public class MessagesProviderUtils {
         return parsed;
     }
 
+    public static int setEncryption(Context context, long threadId, boolean encryption) {
+        ContentValues values = new ContentValues(1);
+        values.put(Threads.ENCRYPTION, encryption);
+        return context.getContentResolver().update(
+                ContentUris.withAppendedId(Threads.CONTENT_URI, threadId),
+                values, null, null);
+    }
+
 }
