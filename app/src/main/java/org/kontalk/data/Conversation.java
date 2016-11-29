@@ -33,6 +33,7 @@ import org.kontalk.provider.MyMessages.Threads;
 import org.kontalk.service.msgcenter.MessageCenterService;
 import org.kontalk.service.msgcenter.group.GroupControllerFactory;
 import org.kontalk.ui.MessagingNotification;
+import org.kontalk.util.MessageUtils;
 import org.kontalk.util.Preferences;
 import org.kontalk.util.SystemUtils;
 
@@ -192,7 +193,8 @@ public class Conversation {
             groupType = cursor.getString(COLUMN_GROUP_TYPE);
             groupPeers = loadGroupPeersInternal(context, groupJid);
         }
-        deleteInternal(context, cursor.getLong(COLUMN_ID), groupJid, groupPeers, groupType, leaveGroup);
+        boolean encrypted = MessageUtils.sendEncrypted(context, cursor.getInt(COLUMN_ENCRYPTED) != 0);
+        deleteInternal(context, cursor.getLong(COLUMN_ID), groupJid, groupPeers, groupType, leaveGroup, encrypted);
     }
 
     public static void deleteAll(Context context, boolean leaveGroups) {
@@ -320,7 +322,7 @@ public class Conversation {
         // it makes sense to leave a group if we have someone to tell about it
         loadGroupPeers(false);
         if (mGroupJid != null) {
-            boolean encrypted = Preferences.getEncryptionEnabled(mContext);
+            boolean encrypted = MessageUtils.sendEncrypted(mContext, mEncryption);
 
             // send the command if there is someone to talk to
             boolean actuallySend = GroupControllerFactory.canSendCommandsWithEmptyGroup(mGroupType) ||
@@ -343,10 +345,11 @@ public class Conversation {
 
     public void delete(boolean leaveGroup) {
         loadGroupPeers(false);
-        deleteInternal(mContext, mThreadId, mGroupJid, mGroupPeers, mGroupType, leaveGroup);
+        deleteInternal(mContext, mThreadId, mGroupJid, mGroupPeers, mGroupType, leaveGroup, mEncryption);
     }
 
-    private static void deleteInternal(Context context, long threadId, String groupJid, String[] groupPeers, String groupType, boolean leaveGroup) {
+    private static void deleteInternal(Context context, long threadId, String groupJid,
+                                       String[] groupPeers, String groupType, boolean leaveGroup, boolean encrypted) {
         // it makes sense to leave a group if we have someone to tell about it
         boolean groupChat = groupJid != null;
         boolean actuallySend = groupChat &&
@@ -365,8 +368,6 @@ public class Conversation {
         // send leave message only if the group was created in the first place
         if (groupChat && leaveGroup) {
             if (groupCreateSent) {
-                boolean encrypted = Preferences.getEncryptionEnabled(context);
-
                 String msgId = MessageCenterService.messageId();
                 Uri cmdMsg = KontalkGroupCommands
                     .leaveGroup(context, Messages.NO_THREAD, groupJid, msgId, encrypted, false);
@@ -433,7 +434,7 @@ public class Conversation {
         MessagesProviderUtils.addGroupMembers(mContext, mGroupJid, members, true);
 
         // store add group member command to outbox
-        boolean encrypted = Preferences.getEncryptionEnabled(mContext);
+        boolean encrypted = MessageUtils.sendEncrypted(mContext, mEncryption);
         String msgId = MessageCenterService.messageId();
         Uri cmdMsg = KontalkGroupCommands
             .addGroupMembers(mContext, getThreadId(), mGroupJid, members, msgId, encrypted);
@@ -454,7 +455,7 @@ public class Conversation {
         MessagesProviderUtils.removeGroupMembers(mContext, mGroupJid, members, true);
 
         // store remove group member command to outbox
-        boolean encrypted = Preferences.getEncryptionEnabled(mContext);
+        boolean encrypted = MessageUtils.sendEncrypted(mContext, mEncryption);
         String msgId = MessageCenterService.messageId();
         Uri cmdMsg = KontalkGroupCommands
             .removeGroupMembers(mContext, getThreadId(), mGroupJid, members, msgId, encrypted);
@@ -478,7 +479,7 @@ public class Conversation {
             getGroupPeers().length > 0;
 
         // store set group subject command to outbox
-        boolean encrypted = Preferences.getEncryptionEnabled(mContext);
+        boolean encrypted = MessageUtils.sendEncrypted(mContext, mEncryption);
         String msgId = MessageCenterService.messageId();
         Uri cmdMsg = KontalkGroupCommands
             .setGroupSubject(mContext, getThreadId(), mGroupJid, subject, msgId, encrypted, !actuallySend);
