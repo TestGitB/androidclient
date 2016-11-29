@@ -34,7 +34,6 @@ import org.kontalk.service.msgcenter.MessageCenterService;
 import org.kontalk.service.msgcenter.group.GroupControllerFactory;
 import org.kontalk.ui.MessagingNotification;
 import org.kontalk.util.MessageUtils;
-import org.kontalk.util.Preferences;
 import org.kontalk.util.SystemUtils;
 
 
